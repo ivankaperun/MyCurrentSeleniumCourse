@@ -1,69 +1,164 @@
 package day28;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.Select;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 
-public class Assignment2 {
+public class Assignment1 {
 
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) {
 		WebDriverManager.chromedriver().setup();
 		WebDriver driver = new ChromeDriver();
 		
 		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-		//WebDriverWait mywait = new WebDriverWait(driver, Duration.ofSeconds(10));
 		
-		driver.get("https://www.dummyticket.com/dummy-ticket-for-visa-application/");
+		driver.get("https://blazedemo.com/");
 		driver.manage().window().maximize();
 		
-		List<WebElement> tickets = driver.findElements(By.xpath("//ul[@id='checkout-products']//li"));
+		//////////////////////////////////////////////////////////////////////////////////////////
+		//select FROM city and click on one option:
+		WebElement dropdownFromCity = driver.findElement(By.xpath("//select[@name='fromPort']"));
+		Select fromCities = new Select(dropdownFromCity);
+		List<WebElement> fromCityOptions = fromCities.getOptions();
 		
-		for(WebElement ticket:tickets)
+		for(WebElement fromCity:fromCityOptions)
 		{
-			System.out.println(ticket.getText());
-		}
-		
-		for(int i=0; i < tickets.size(); i++)
-		{	
-			if(tickets.get(i).getText().contains("booking"))
+			if(fromCity.getText().equals("Boston"))
 			{
-				driver.findElement(By.xpath("//ul[@id='checkout-products']/li["+(i+1)+"]//input")).click();
-				String price = driver.findElement(By.xpath("//ul[@id='checkout-products']/li["+(i+1)+"]//span[@class='price']")).getText();
-				System.out.println(price);
+				fromCity.click();
 				break;
 			}
 		}
 		
-		//Verification 1
-		Thread.sleep(5000);
-		String expected_result = "booking";
-		String actual_result = driver.findElement(By.xpath("//div[@class='product-details']")).getText();
-		System.out.println(actual_result);
-		if(actual_result.contains(expected_result))
+		//select TO city and click on one option:
+		WebElement dropdownToCity = driver.findElement(By.xpath("//select[@name='toPort']"));
+		Select toCities = new Select(dropdownToCity);
+		List<WebElement> toCityOptions = toCities.getOptions();
+		
+		for(WebElement toCity:toCityOptions)
 		{
-			System.out.println("Test 1 passed");
-		} else
-		{
-			System.out.println("Test 1 failed");
+			if(toCity.getText().equals("New York"))
+			{
+				toCity.click();
+				break;
+			}
 		}
 		
-		//Verification 2
-		String expected_price = "20.00";
-		String actual_price = driver.findElement(By.xpath("//tr[@class='cart-subtotal']//span")).getText();
-		if(actual_price.contains(expected_price))
+		driver.findElement(By.xpath("//input[@value='Find Flights']")).click();
+		
+		//Verify result
+		String expected_result1 = "Flights from Boston to New York";
+		String actual_result1 = driver.findElement(By.xpath("//h3")).getText();
+		
+		if(actual_result1.contains(expected_result1))
+		 {
+			 System.out.println("Page 2: Test passed");
+		 }
+		 else
+		 {
+			 System.out.println("Page 2: Test failed");
+		 }
+		
+		///////////////////////////////////////////////////////////////////////////////////////
+		//Select flight with lowest cost:
+		//table size:
+		int rows = driver.findElements(By.xpath("//table//tbody//tr")).size();
+		int cols = driver.findElements(By.xpath("//table//thead//th")).size();
+		
+		Double pricesArray[] = new Double[rows];
+		
+		for(int r=1; r <= rows; r++)
 		{
-			System.out.println("Test 2 passed");
-		} else
-		{
-			System.out.println("Test 2 failed");
+			String price = driver.findElement(By.xpath("//table//tbody//tr["+r+"]//td["+cols+"]")).getText();
+			pricesArray[r-1]=Double.parseDouble(price.replace("$", ""));
 		}
+		 
+		 Arrays.sort(pricesArray); // sort array to get lowest value first
+		 String lowestCost = "$" + pricesArray[0];
+		 
+		 for (int r=1; r <= rows; r++)
+		 {
+			 WebElement price = driver.findElement(By.xpath("//table//tbody//tr["+r+"]//td["+cols+"]"));
+			 if(price.getText().equals(lowestCost))
+			 {
+				 driver.findElement(By.xpath("//table/tbody/tr["+r+"]/td[1]/input[@value='Choose This Flight']")).click();
+				 break;
+			 }
+		 }
+		 
+		 //Verify the result
+		 String expected_result2 = "Your flight from TLV to SFO has been reserved.";
+		 String actual_result2 = driver.findElement(By.xpath("//h2")).getText();
+		 
+		 if(actual_result2.equals(expected_result2))
+		 {
+			 System.out.println("Page 3: Test passed");
+		 }
+		 else
+		 {
+			 System.out.println("Page 3: Test failed");
+		 }
+		 
+		 //////////////////////////////////////////////////////////////////////////////////////
+		 //Fill all the data to the flight:
+		 driver.findElement(By.xpath("//input[@id='inputName']")).sendKeys("John Wick");
+		 driver.findElement(By.xpath("//input[@id='address']")).sendKeys("1235 Norman Street");
+		 driver.findElement(By.xpath("//input[@id='city']")).sendKeys("New York");
+		 driver.findElement(By.xpath("//input[@id='state']")).sendKeys("NY");
+		 driver.findElement(By.xpath("//input[@id='zipCode']")).sendKeys("10001");
+		 
+		 WebElement dropdownCardType = driver.findElement(By.xpath("//select[@id='cardType']"));
+		 Select cardTypes = new Select(dropdownCardType);
+		 List<WebElement> cardOptions = cardTypes.getOptions();
+		 for(WebElement option:cardOptions)
+		 {
+			 if(option.getText().equals("American Express"))
+			 {
+				 option.click();
+				 break;
+			 }
+		 }
+		 
+		 driver.findElement(By.xpath("//input[@id='creditCardNumber']")).sendKeys("5149612222222229");
+		 
+		 WebElement creditCardMonth = driver.findElement(By.xpath("//input[@id='creditCardMonth']"));
+		 creditCardMonth.clear();
+		 creditCardMonth.sendKeys("01");
+		 
+		 WebElement creditCardYear = driver.findElement(By.xpath("//input[@id='creditCardYear']"));
+		 creditCardYear.clear();
+		 creditCardYear.sendKeys("2039");
+		 
+		 driver.findElement(By.xpath("//input[@id='nameOnCard']")).sendKeys("John Wick");
+		 driver.findElement(By.xpath("//input[@id='rememberMe']")).click();
+		 
+		 //Click on Purchase Flight button
+		 driver.findElement(By.xpath("//input[@value='Purchase Flight']")).click();
+		 
+		 
+		 /////////////////////////////////////////////////////////////////////////////
+		 //Verify that the flight was booked: 
+		 String expected_result3 = "Thank you for your purchase today!";
+		 String actual_result3 = driver.findElement(By.xpath("//h1")).getText();
+		 
+		 if(actual_result3.equals(expected_result3))
+		 {
+			 System.out.println("Page 4: Test passed");
+		 }
+		 else
+		 {
+			 System.out.println("Page 4: Test failed");
+		 }
+		 	 
+		 driver.close();
 	}
 
 }
